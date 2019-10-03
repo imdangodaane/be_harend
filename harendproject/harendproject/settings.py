@@ -140,5 +140,7 @@ APP_CLIENT_ID = '36d2d4d477b02bde8cd716af0c0272dd'
 # APP_CLIENT_SECRET = '042c9f2e3ce5bcb7d92255a2400f2f69'
 APP_CLIENT_SECRET = 'ffd3de6302a370cd8dbc8e02bd2cb671'
 
-APP_REDIRECT_URL = 'http://localhost:4200/linking'
+# APP_REDIRECT_URL = 'http://localhost:4200/linking'
+APP_REDIRECT_URL = 'https://auth.expo.io/@anonymous/harend-65dd154c-89b8-42e5-8820-865690244aa5'
+
 APP_SCOPE = 'read_content,write_content,read_products,write_products,read_orders,write_orders'
