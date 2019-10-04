@@ -121,44 +121,38 @@ def toggle_promoting(request, id, percent):
   try:
     variant = Variant.objects.get(variant_id=id)
   except Variant.DoesNotExist:
-    return JsonResponse({'errors': 'variant not found'})
-  print(variant.__dict__)
-  return JsonResponse(json.dumps(variant.__dict__))
-  # result = {}
-  # # AUTHORIZE
-  # token = request.headers['Authorization']
-  # user_token = Token.objects.get(token=token.split(' ')[1])
-  # shop = Shop.objects.get(user=user_token.user)
-  # # REQUEST
-  # headers = {
-  #   'Authorization': 'Bearer ' + shop.access_token,
-  #   'Content-Type': 'application/json',
-  # }
-  # print(headers)
-  # payload = {
-  #   "variant": {
-  #     "price": 950000,
-  #     # "compare_at_price": 1300000
-  #   }
-  # }
-  # print(payload)
-  # print(json.dumps(payload))
-  # url = '''https://{shopname}/admin/variants/{id}.json'''.format(shopname=shop.name, id=id)
-  # print(url)
-  # res = requests.put(url, json.dumps(payload), headers=headers)
-  # print(res)
-  # try:
-  #   res_data = json.loads(res.content.decode())
-  # except json.decoder.JSONDecodeError:
-  #   # return HttpResponse(res.content.decode())
-  #   return JsonResponse({'status': 'failed to get data'})
-  # result = res_data
-  # # GZIP
-  # gzip_file_name = data_to_gzip(result)
-  # response = HttpResponse(open(gzip_file_name, 'rb'))
-  # response['Content-Encoding'] = 'gzip'
-  # # return JsonResponse(result)
-  # return response
+    return unauthorized_request('variant not found', 400)
+  if variant.is_promoting:
+    return unauthorized_request('variant is promoting', 400)
+  else:
+    # AUTHORIZE
+    token = request.headers['Authorization']
+    user_token = Token.objects.get(token=token.split(' ')[1])
+    shop = Shop.objects.get(user=user_token.user)
+    # REQUEST
+    headers = {
+      'Authorization': 'Bearer ' + shop.access_token,
+      'Content-Type': 'application/json',
+    }
+    promote_price = int(variant.price * (1 - percent / 100))
+    payload = {
+      "variant": {
+        "price": promote_price,
+      }
+    }
+    url = '''https://{shopname}/admin/variants/{id}.json'''.format(shopname=shop.name, id=id)
+    res = requests.put(url, json.dumps(payload), headers=headers)
+    print(res.status_code)
+    if res.status_code == 200:
+      variant.price = promote_price
+      variant.is_promoting = True
+      variant.promotion_percent = float(percent)
+      variant.save()
+    # GZIP
+    gzip_file_name = data_to_gzip({'status': 'set promotion of variant success'})
+    response = HttpResponse(open(gzip_file_name, 'rb'))
+    response['Content-Encoding'] = 'gzip'
+    return response
 
 
 @csrf_exempt
@@ -168,4 +162,37 @@ def toggle_promoting(request, id, percent):
 @shop_required
 def turn_off_promoting(request, id):
   # SHOULD TURN OFF PROMOTING
-  pass
+  try:
+    variant = Variant.objects.get(variant_id=id)
+  except Variant.DoesNotExist:
+    return unauthorized_request('variant not found', 400)
+  if not variant.is_promoting:
+    return unauthorized_request('not promoting variant', 400)
+  else:
+    # AUTHORIZE
+    token = request.headers['Authorization']
+    user_token = Token.objects.get(token=token.split(' ')[1])
+    shop = Shop.objects.get(user=user_token.user)
+    # REQUEST
+    headers = {
+      'Authorization': 'Bearer ' + shop.access_token,
+      'Content-Type': 'application/json',
+    }
+    payload = {
+      "variant": {
+        "price": variant.base_price,
+      }
+    }
+    url = '''https://{shopname}/admin/variants/{id}.json'''.format(shopname=shop.name, id=id)
+    res = requests.put(url, json.dumps(payload), headers=headers)
+    print(res.status_code)
+    if res.status_code == 200:
+      variant.price = variant.base_price
+      variant.is_promoting = False
+      variant_promotion_percent = 0
+      variant.save()
+    # GZIP
+    gzip_file_name = data_to_gzip({'status': 'remove promotion of variant success'})
+    response = HttpResponse(open(gzip_file_name, 'rb'))
+    response['Content-Encoding'] = 'gzip'
+    return response

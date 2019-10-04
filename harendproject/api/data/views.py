@@ -208,16 +208,6 @@ def process_products2(data, orders=None):
         'image': get_image_id(product, variant),
         'compare_at_price': variant['compare_at_price'],
       }
-      # PROMOTION
-      try:
-        promote_percent = round((1 - float(res['price']) / float(res['compare_at_price'])) * 100, 2)
-      except (TypeError, ZeroDivisionError):
-        promote_percent = 0
-      res['promote_percent'] = promote_percent
-      if res['promote_percent'] > 0:
-        res['is_promoting'] = 1
-      else:
-        res['is_promoting'] = 0
       # ORDER SORT
       if orders:
         last_order = is_traded(res, orders)
@@ -231,8 +221,6 @@ def process_products2(data, orders=None):
           res['traded_from_now'] = 'null'
         else:
           res['traded_from_now'] = get_days_traded_from_now(res['last_order'])
-      # APPEND
-      result.append(res)
       # VARIANT UPDATE TO DATABASE
       try:
         db_variant = Variant.objects.get(variant_id=res['id'])
@@ -243,6 +231,29 @@ def process_products2(data, orders=None):
                               promotion_percent=0,
                               is_promoting=0)
         db_variant.save()
+      # PROMOTION
+      # try:
+      #   promote_percent = round((1 - float(res['price']) / float(res['compare_at_price'])) * 100, 2)
+      # except (TypeError, ZeroDivisionError):
+      #   promote_percent = 0
+      # res['promote_percent'] = promote_percent
+      # if res['promote_percent'] > 0:
+      #   res['is_promoting'] = 1
+      # else:
+      #   res['is_promoting'] = 0
+      if db_variant.is_promoting == True:
+        res['is_promoting'] = 1
+        res['promote_percent'] = db_variant.promotion_percent
+      else:
+        res['is_promoting'] = 0
+        res['promote_percent'] = 0
+        if db_variant.base_price != res['price']:
+          db_variant.base_price = res['price']
+          db_variant.price = res['price']
+          db_variant.save()
+      res['base_price'] = db_variant.base_price
+      # APPEND
+      result.append(res)
   return result
 
 
