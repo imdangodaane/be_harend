@@ -8,6 +8,7 @@ from datetime import datetime
 from rest_framework import generics
 
 from api.authenticate.models import Login, Token, Shop
+from api.data.variants.models import Variant
 from api.authenticate.serializers import LoginSerializer
 from .serializers import UpdateCodeSerializer
 
@@ -194,6 +195,7 @@ def process_products2(data, orders=None):
   products = data['products']
   for product in products:
     for variant in product['variants']:
+      # BASIC INFORMATION
       res = {
         'id': variant['id'],
         'product_name': product['title'] + ' - ' + variant['title'],
@@ -204,7 +206,19 @@ def process_products2(data, orders=None):
         'last_updated': variant['updated_at'],
         'price': variant['price'],
         'image': get_image_id(product, variant),
+        'compare_at_price': variant['compare_at_price'],
       }
+      # PROMOTION
+      try:
+        promote_percent = round((1 - float(res['price']) / float(res['compare_at_price'])) * 100, 2)
+      except (TypeError, ZeroDivisionError):
+        promote_percent = 0
+      res['promote_percent'] = promote_percent
+      if res['promote_percent'] > 0:
+        res['is_promoting'] = 1
+      else:
+        res['is_promoting'] = 0
+      # ORDER SORT
       if orders:
         last_order = is_traded(res, orders)
         # print(last_order)
@@ -217,7 +231,18 @@ def process_products2(data, orders=None):
           res['traded_from_now'] = 'null'
         else:
           res['traded_from_now'] = get_days_traded_from_now(res['last_order'])
+      # APPEND
       result.append(res)
+      # VARIANT UPDATE TO DATABASE
+      try:
+        db_variant = Variant.objects.get(variant_id=res['id'])
+      except Variant.DoesNotExist:
+        db_variant = Variant(variant_id=res['id'],
+                              price=res['price'],
+                              base_price=res['price'],
+                              promotion_percent=0,
+                              is_promoting=0)
+        db_variant.save()
   return result
 
 
