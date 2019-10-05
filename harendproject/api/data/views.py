@@ -146,7 +146,7 @@ def request_get_data_from_haravan(shop, page=1, key='products', params=None, _id
   if _id:
     url = '''https://{shopname}/admin/{type}/{id}.json'''.format(shopname=shop.name, type=ref[key], id=_id)
   # ''' REQUEST '''
-  print(url)
+  # print(url)
   res = requests.get(url, headers=headers)
   # print('===> res_data: ', res.content.decode())
   try:
@@ -409,7 +409,7 @@ def get_product_by_id(request, id):
 @authorize_token
 def update_code_view(request):
   # GET CODE AND SHOP NAME
-  print(request.body)
+  # print(request.body)
   try:
     raw_data = json.loads(request.body.decode())
   except json.decoder.JSONDecodeError:
@@ -436,9 +436,9 @@ def update_code_view(request):
     shop = Shop(name=shop_name, user=user_token.user, code=code)
     shop.save()
   tokens = get_tokens_from_haravan(shop)
-  print('Get tokens from haravans: ')
-  print(tokens)
-  print('\n\n\n')
+  # print('Get tokens from haravans: ')
+  # print(tokens)
+  # print('\n\n\n')
   try:
     shop.access_token = tokens['access_token']
   except KeyError:
@@ -448,11 +448,11 @@ def update_code_view(request):
   except KeyError:
     return unauthorized_request('code expired', 402)
   shop.save()
-  print('access_token: ')
-  print(tokens['access_token'])
-  print('Saved access_token in shop: ')
-  print(shop.access_token)
-  print('\n\n\n\n\n')
+  # print('access_token: ')
+  # print(tokens['access_token'])
+  # print('Saved access_token in shop: ')
+  # print(shop.access_token)
+  # print('\n\n\n\n\n')
   # print(shop.__dict__)
   return JsonResponse({'status': 'get access_token success'})
 

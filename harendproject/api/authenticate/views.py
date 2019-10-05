@@ -36,7 +36,7 @@ class RegisterView(generics.CreateAPIView):
           return Response({ 'status': 'Success' }, status=200)   
         return Response({ 'status' : 'Wrong syntax' }, status=400)
     except Exception as e:
-      print(str(e))
+      # print(str(e))
       with open('~/error.log', 'a+') as f:
         f.write(str(e))
 

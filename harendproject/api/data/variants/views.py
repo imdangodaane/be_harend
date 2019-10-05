@@ -91,12 +91,12 @@ def update_variant(request, id):
       "compare_at_price": 1300000
     }
   }
-  print(payload)
-  print(json.dumps(payload))
+  # print(payload)
+  # print(json.dumps(payload))
   url = '''https://{shopname}/admin/variants/{id}.json'''.format(shopname=shop.name, id=id)
-  print(url)
+  # print(url)
   res = requests.put(url, json.dumps(payload), headers=headers)
-  print(res)
+  # print(res)
   try:
     res_data = json.loads(res.content.decode())
   except json.decoder.JSONDecodeError:
@@ -142,7 +142,7 @@ def toggle_promoting(request, id, percent):
     }
     url = '''https://{shopname}/admin/variants/{id}.json'''.format(shopname=shop.name, id=id)
     res = requests.put(url, json.dumps(payload), headers=headers)
-    print(res.status_code)
+    # print(res.status_code)
     if res.status_code == 200:
       variant.price = promote_price
       variant.is_promoting = True
@@ -185,7 +185,7 @@ def turn_off_promoting(request, id):
     }
     url = '''https://{shopname}/admin/variants/{id}.json'''.format(shopname=shop.name, id=id)
     res = requests.put(url, json.dumps(payload), headers=headers)
-    print(res.status_code)
+    # print(res.status_code)
     if res.status_code == 200:
       variant.price = variant.base_price
       variant.is_promoting = False
