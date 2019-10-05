@@ -190,8 +190,20 @@ def get_days_traded_from_now(last_order):
   return str((now - last_order).days)
 
 
-def process_products2(data, orders=None):
+def process_products2(data, orders=None, params=None):
   result = []
+  # PARAMS FILTER
+  if params:
+    # QUANTITY FILTER
+    try:
+      quantity_from = int(params['quantityFrom'])
+      quantity_to = int(params['quantityTo'])
+    except (KeyError, ValueError):
+      quantity_from = None
+      quantity_to = None
+  else:
+    quantity_from = None
+    quantity_to = None
   products = data['products']
   for product in products:
     for variant in product['variants']:
@@ -253,7 +265,12 @@ def process_products2(data, orders=None):
           db_variant.save()
       res['base_price'] = db_variant.base_price
       # APPEND
-      result.append(res)
+      if quantity_from is not None and quantity_to is not None:
+        if res['quantity'] >= quantity_from and res['quantity'] <= quantity_to:
+          result.append(res)
+          continue
+      else:
+        result.append(res)
   return result
 
 
@@ -336,7 +353,7 @@ def get_orders(request):
 @authorize_token
 @shop_required
 def get_products(request):
-  result = {'products': []}
+  # result = {'products': []}
   result2 = []
   # AUTHORIZE
   token = request.headers['Authorization']
@@ -349,11 +366,13 @@ def get_products(request):
   #   process_data(res_data)
   #   result['products'] += res_data['products']
   # result['products'].sort(key=lambda i: i['total_quantity'], reverse=True)
+  # QUERY PARAMS
+  query_params = request.GET.dict()
   # NEW PROCESS PRODUCTS
   orders = get_orders_local(request)
   for i in range(1, int(total_page)+1):
     res_data = request_get_data_from_haravan(shop, i)
-    res_data = process_products2(res_data, orders)
+    res_data = process_products2(res_data, orders, query_params)
     result2 += res_data
   result2.sort(key=lambda i: i['quantity'], reverse=True)
   # result2.sort(key=lambda i: i['traded_from_now'] != 'null', reverse=True)
@@ -436,3 +455,11 @@ def update_code_view(request):
   print('\n\n\n\n\n')
   # print(shop.__dict__)
   return JsonResponse({'status': 'get access_token success'})
+
+
+def test_query_params(request):
+  print(request.GET.dict())
+  query_params = request.GET.dict()
+  return JsonResponse({'status': query_params})
+
+

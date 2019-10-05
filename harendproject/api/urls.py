@@ -20,6 +20,8 @@ urlpatterns = [
     path('data/variants/<int:id>/<int:percent>', var_views.toggle_promoting),
     path('data/variants/offpromote/<int:id>', var_views.turn_off_promoting),
 
+    path('data/products/testqueryparams', data_views.test_query_params),
+
     path('register', authen_views.RegisterView.as_view()),
     path('login', authen_views.LoginCheck.as_view()),
 ]
