@@ -463,3 +463,35 @@ def test_query_params(request):
   return JsonResponse({'status': query_params})
 
 
+@csrf_exempt
+@require_http_methods(['GET'])
+@token_required
+@authorize_token
+@shop_required
+def get_promoting_products(request):
+  result = []
+  promoting_products = []
+  # AUTHORIZE
+  token = request.headers['Authorization']
+  user_token = Token.objects.get(token=token.split(' ')[1])
+  shop = Shop.objects.get(user=user_token.user)
+  total_page = get_total_page(shop)
+  # QUERY PARAMS
+  query_params = request.GET.dict()
+  # NEW PROCESS PRODUCTS
+  orders = get_orders_local(request)
+  for i in range(1, int(total_page)+1):
+    res_data = request_get_data_from_haravan(shop, i)
+    res_data = process_products2(res_data, orders, query_params)
+    result += res_data
+  
+  promoting_products = Variant.objects.filter(is_promoting=1).values_list('variant_id', flat=True)
+  result = list(filter(lambda x: x['id'] in promoting_products, result))
+
+  result.sort(key=lambda i: i['quantity'], reverse=True)
+  # GZIP
+  gzip_file_name = data_to_gzip(result)
+  response = HttpResponse(open(gzip_file_name, 'rb'))
+  response['Content-Encoding'] = 'gzip'
+  # return JsonResponse(result)
+  return response

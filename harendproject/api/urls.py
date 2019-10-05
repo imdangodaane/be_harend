@@ -12,6 +12,7 @@ urlpatterns = [
     path('updatecode', data_views.update_code_view),
     # path('getdata', data_views.get_data_view),
     path('getdata/products', data_views.get_products),
+    path('getdata/promotingproducts', data_views.get_promoting_products),
     # path('getdata/products/<int:id>', data_views.get_product_by_id),
     path('getdata/orders', data_views.get_orders),
 
